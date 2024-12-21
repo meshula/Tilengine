@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.6)
 project(Tilengine)
 
 # set an option to use libpng from the system, otherwise use bundled stb_image
-option(TILENEGINE_LIBPNG "Use the system libpng" OFF)
+option(TLN_OPTION_LIBPNG "Use the system libpng" OFF)
 
 # set an option to make the examples
-option(TILENEGINE_SAMPLES "Build the examples" OFF)
+option(TLN_OPTION_SAMPLES "Build the examples" OFF)
 
 file(GLOB SOURCES
      "src/*.c"
@@ -20,7 +20,7 @@ if (UNIX AND NOT APPLE)
 	set(CMAKE_C_FLAGS "-m64 -msse2")
 endif()
 
-if (TILENEGINE_LIBPNG)
+if (TLN_OPTION_LIBPNG)
     add_definitions(-DTLN_HAVE_PNG)
     find_package(PNG REQUIRED)
     target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
@@ -55,12 +55,12 @@ if (TILENGINE_SAMPLES)
     target_link_libraries(Test PRIVATE "z")
 endif()
 
-if (TILENEGINE_LIBPNG)
+if (TLN_OPTION_LIBPNG)
     target_link_libraries(Test PRIVATE ${PNG_LIBRARIES})
     target_link_libraries(Test PRIVATE "m")
 endif()
 
-if (TILENEGINE_SAMPLES)
+if (TLN_OPTION_SAMPLES)
     # samples
     add_subdirectory(samples)
 endif()
