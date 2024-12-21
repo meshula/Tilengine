@@ -2,11 +2,15 @@ cmake_minimum_required(VERSION 3.6)
 
 project(Tilengine)
 
+# set an option to use libpng from the system, otherwise use bundled stb_image
+option(TILENEGINE_LIBPNG "Use the system libpng" OFF)
+
+# set an option to make the examples
+option(TILENEGINE_SAMPLES "Build the examples" OFF)
 
 file(GLOB SOURCES
      "src/*.c"
 )
-
 
 # main library
 list(REMOVE_ITEM SOURCES "src/Test.c")
@@ -14,16 +18,25 @@ add_library(${PROJECT_NAME} ${SOURCES})
 
 if (UNIX AND NOT APPLE)
 	set(CMAKE_C_FLAGS "-m64 -msse2")
-elseif (UNIX AND APPLE)
-    target_link_libraries(${PROJECT_NAME} PRIVATE "framework")
+endif()
+
+if (TILENEGINE_LIBPNG)
+    add_definitions(-DTLN_HAVE_PNG)
+    find_package(PNG REQUIRED)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARIES})
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE "c")
 target_link_libraries(${PROJECT_NAME} PRIVATE "z")
-target_link_libraries(${PROJECT_NAME} PRIVATE "png")
 
-find_package(SDL2 REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
+if (TILENGINE_SAMPLES)
+    find_package(SDL2 REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${SDL2_LIBRARIES})
+    add_definitions(-DTLN_HAVE_SDL2)
+else()
+    add_definitions(-DTLN_EXCLUDE_WINDOW)
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
@@ -33,14 +46,21 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result -Wno-format-truncation")
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/include/Tilengine.h
      DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-# test executable
-add_executable(Test src/Test.c)
-target_include_directories(Test PRIVATE include)
-target_link_libraries(Test PRIVATE "Tilengine")
-target_link_libraries(Test PRIVATE "c")
-target_link_libraries(Test PRIVATE "z")
-target_link_libraries(Test PRIVATE "png")
-target_link_libraries(Test PRIVATE "m")
+if (TILENGINE_SAMPLES)
+    # test executable
+    add_executable(Test src/Test.c)
+    target_include_directories(Test PRIVATE include)
+    target_link_libraries(Test PRIVATE "Tilengine")
+    target_link_libraries(Test PRIVATE "c")
+    target_link_libraries(Test PRIVATE "z")
+endif()
 
-# samples
-add_subdirectory(samples)
+if (TILENEGINE_LIBPNG)
+    target_link_libraries(Test PRIVATE ${PNG_LIBRARIES})
+    target_link_libraries(Test PRIVATE "m")
+endif()
+
+if (TILENEGINE_SAMPLES)
+    # samples
+    add_subdirectory(samples)
+endif()
