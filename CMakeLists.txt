@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.6)
 project(Tilengine)
 
 # set an option to use libpng from the system, otherwise use bundled stb_image
-option(TLN_OPTION_LIBPNG "Use the system libpng" OFF)
+option(TLN_OPTION_LIBPNG "Use the system libpng" ON)
 
 # set an option to make the examples
 option(TLN_OPTION_SAMPLES "Build the examples" OFF)
@@ -22,8 +22,21 @@ endif()
 
 if (TLN_OPTION_LIBPNG)
     add_definitions(-DTLN_HAVE_PNG)
-    find_package(PNG REQUIRED)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
+
+    # this project needs png, if png is not found, let's use fetch content
+    find_package(PNG QUIET)
+    if (NOT PNG_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            libpng
+            GIT_REPOSITORY https://github.com/pnggroup/libpng.git
+            GIT_TAG v1.6.44
+        )
+        FetchContent_MakeAvailable(libpng)
+        set(PNG_LIBRARIES png_static)
+    else()
+        target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
+    endif()
     target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARIES})
 endif()
 
@@ -53,9 +66,6 @@ if (TILENGINE_SAMPLES)
     target_link_libraries(Test PRIVATE "Tilengine")
     target_link_libraries(Test PRIVATE "c")
     target_link_libraries(Test PRIVATE "z")
-endif()
-
-if (TLN_OPTION_LIBPNG)
     target_link_libraries(Test PRIVATE ${PNG_LIBRARIES})
     target_link_libraries(Test PRIVATE "m")
 endif()

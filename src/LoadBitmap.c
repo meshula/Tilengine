@@ -119,7 +119,8 @@ static TLN_Bitmap Convert24ToIndexed(TLN_Bitmap source)
 		for (x = 0; x < source->width; x += 1)
 		{
 			uint32_t value = PackRGB32(srccolor->r, srccolor->g, srccolor->b);
-			*dstcolor = set_get_index(&colors, value) + 1;
+            uint8_t idx =  set_get_index(&colors, value);
+            *dstcolor = !idx ? 0 : idx + 1;
 			srccolor += 1;
 			dstcolor += 1;
 		}

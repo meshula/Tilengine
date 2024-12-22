@@ -49,10 +49,6 @@ Actor* CreateShip (void)
 	return actor;
 }
 
-#if !TLN_HAVE_SDL2
-bool TLN_GetInput(TLN_Input id) { return false; }
-#endif
-
 void ShipTasks (Actor* actor)
 {
 	Ship* ship = (Ship*)actor->usrdata;
