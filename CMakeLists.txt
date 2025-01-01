@@ -4,6 +4,7 @@ project(Tilengine)
 
 # set an option to use libpng from the system, otherwise use bundled stb_image
 option(TLN_OPTION_LIBPNG "Use the system libpng" ON)
+option(TLN_OPTION_BUILD_LIBPNG "Build libpng from source" OFF)
 
 # set an option to make the examples
 option(TLN_OPTION_SAMPLES "Build the examples" OFF)
@@ -21,11 +22,9 @@ if (UNIX AND NOT APPLE)
 endif()
 
 if (TLN_OPTION_LIBPNG)
-    add_definitions(-DTLN_HAVE_PNG)
-
     # this project needs png, if png is not found, let's use fetch content
     find_package(PNG QUIET)
-    if (NOT PNG_FOUND)
+    if (NOT PNG_FOUND AND TLN_OPTION_BUILD_LIBPNG)
         include(FetchContent)
         FetchContent_Declare(
             libpng
@@ -34,10 +33,18 @@ if (TLN_OPTION_LIBPNG)
         )
         FetchContent_MakeAvailable(libpng)
         set(PNG_LIBRARIES png_static)
-    else()
-        target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
+        add_definitions(-DTLN_HAVE_PNG)
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARIES})
     endif()
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARIES})
+    if (NOT PNG_FOUND AND NOT TLN_OPTION_BUILD_LIBPNG)
+        # clear the PNG_LIBRARY variable
+        unset(PNG_LIBRARY CACHE)
+    endif()
+    if (PNG_FOUND)
+        add_definitions(-DTLN_HAVE_PNG)
+        target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARIES})
+    endif()
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE "c")
@@ -66,6 +73,10 @@ if (TILENGINE_SAMPLES)
     target_link_libraries(Test PRIVATE "Tilengine")
     target_link_libraries(Test PRIVATE "c")
     target_link_libraries(Test PRIVATE "z")
+    if (TLN_OPTION_LIBPNG)
+        target_include_directories(Test PRIVATE ${PNG_INCLUDE_DIRS})
+        target_link_libraries(Test PRIVATE ${PNG_LIBRARIES})
+    endif()
     target_link_libraries(Test PRIVATE ${PNG_LIBRARIES})
     target_link_libraries(Test PRIVATE "m")
 endif()
